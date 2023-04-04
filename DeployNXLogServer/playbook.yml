@@ -1,7 +1,7 @@
 ---
-- name: Update NXLog Client Config
+- name: Update NXLog Server Config
   hosts: win_domain
-  gather_facts: no
+  gather_facts: yes
 
   tasks:
   - name: Check NXLog is installed
@@ -11,7 +11,7 @@
   
   - name: Copy new NXlog config
     ansible.windows.win_get_url:
-      url: http://172.16.1.11:8080/homelab/nxlog/-/raw/main/Client/nxlog.conf
+      url: http://172.16.1.11:8080/homelab/nxlog/-/raw/main/Server/nxlog.conf
       dest: C:\Program Files\nxlog\conf\nxlog.conf
       force: yes
     when: service_exists
@@ -19,7 +19,7 @@
 
   - name: Copy new NXlog windows_env config
     ansible.windows.win_get_url:
-      url: http://172.16.1.11:8080/homelab/nxlog/-/raw/main/Client/windows_env.cmd
+      url: http://172.16.1.11:8080/homelab/nxlog/-/raw/main/Server/windows_env.cmd
       dest: C:\Program Files\nxlog\conf\windows_env.cmd
       force: yes
     when: service_exists
@@ -30,4 +30,3 @@
     ansible.windows.win_service:
       name: NXlog
       state: restarted
-  

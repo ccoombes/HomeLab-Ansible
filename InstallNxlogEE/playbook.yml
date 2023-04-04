@@ -4,13 +4,16 @@
   gather_facts: no
 
   tasks:
-  # 7-Zip exe doesn't use a guid for the Product ID
   - name: Install NXLog EE
     ansible.windows.win_package:
       path: \\172.16.1.50\Software\nxlog-trial-5.7.7898_windows_x64.msi
       state: present
+      product_id: '{A3D02ABD-BC1B-48CA-B009-9CFA2FEA5CD6}' 
     become: yes
     become_method: runas
     vars:
-      ansible_become_user: administrator
+      ansible_become_user: .\administrator
       ansible_become_password: P@ssw0rd
+
+
+      

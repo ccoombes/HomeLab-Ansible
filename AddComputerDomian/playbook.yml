@@ -1,0 +1,36 @@
+---
+- name: Add Windows Server to a Active Directory Domain
+  hosts: all
+  vars:
+    ansible_port: 5985
+    ansible_user: .\administrator
+    ansible_password: P@ssw0rd
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+  gather_facts: no
+
+  tasks:
+  - name: Add Computer to the Domain
+    ansible.windows.win_domain_membership:
+      dns_domain_name: internal.georgieandchris.com
+      hostname: "{{hostname}}"
+      domain_admin_user: ccadmin@internal.georgieandchris.com
+      domain_admin_password: P@ssw0rd
+      domain_ou_path: "OU=Windows Server,OU=Georgie and Chris Computers,DC=internal,DC=georgieandchris,DC=com"
+      state: domain
+    register: domain_state
+
+  - name: Run PowerShell script with parameters
+    ansible.windows.win_powershell:
+      script: |
+        echo "Hello World"
+        $file = "ConfigureRemotingForAnsible.ps1"
+        $uri = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/$file"
+        Invoke-WebRequest -Uri $uri -OutFile ~\Desktop\$file
+        cd ~\Desktop
+        "test" > test.txt
+        .\ConfigureRemotingForAnsible.ps1
+
+  - name: Reboot if required
+    ansible.windows.win_reboot:
+    when: domain_state.reboot_required
