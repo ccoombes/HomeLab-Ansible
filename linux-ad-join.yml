@@ -15,7 +15,16 @@
           - sssd
           - krb5-workstation
           - samba-common-tools
+          - oddjob
+          - oddjob-mkhomedir
+          - adcli
         state: present
+
+    - name: Ensure oddjobd service is enabled and started
+      ansible.builtin.systemd:
+        name: oddjobd
+        enabled: yes
+        state: started
 
     - name: Discover the domain
       ansible.builtin.command:
@@ -25,9 +34,7 @@
 
     - name: Join the server to the AD domain
       ansible.builtin.command:
-        #cmd: realm join --user={{ domain_admin_user }} {{ domain_name }} --computer-ou={{ ad_ou }}
-        cmd: realm join --user={{ domain_admin_user }} {{ domain_name }}
-        stdin: "{{ domain_admin_password }}"
+        cmd: echo {{ domain_admin_password }} | realm join --user={{ domain_admin_user }} {{ domain_name }}
       when: realm_discover.rc == 0
 
     - name: Ensure SSSD service is enabled and started
