@@ -25,7 +25,8 @@
 
     - name: Join the server to the AD domain
       ansible.builtin.command:
-        cmd: realm join --user={{ domain_admin_user }} {{ domain_name }} --computer-ou={{ ad_ou }}
+        #cmd: realm join --user={{ domain_admin_user }} {{ domain_name }} --computer-ou={{ ad_ou }}
+        cmd: realm join --user={{ domain_admin_user }} {{ domain_name }}
         stdin: "{{ domain_admin_password }}"
       when: realm_discover.rc == 0
 
