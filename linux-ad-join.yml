@@ -37,6 +37,16 @@
         cmd: echo {{ domain_admin_password }} | realm join --user={{ domain_admin_user }} {{ domain_name }}
       when: realm_discover.rc == 0
 
+    - name: Verify if the keytab file exists
+      ansible.builtin.stat:
+        path: /etc/krb5.keytab
+      register: krb5_keytab
+
+    - name: Create keytab file if not present using net ads
+      ansible.builtin.command:
+        cmd: net ads keytab create -U {{ domain_admin_user }}%{{ domain_admin_password }}
+      when: not krb5_keytab.stat.exists
+
     - name: Create /etc/sssd directory if it does not exist
       ansible.builtin.file:
         path: /etc/sssd
