@@ -1,0 +1,49 @@
+---
+- name: Join Rocky Linux server to AD domain
+  hosts: all
+  become: yes
+  vars:
+    domain_name: "internal.georgieandchris.com"
+    domain_admin_user: "ccadmin"
+    domain_admin_password: "P@ssw0rd"
+    ad_ou: "OU=Georgie and Chris Computers,DC=internal,DC=georgieandchris,DC=com # Optional, specify the OU if needed
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.yum:
+        name:
+          - realmd
+          - sssd
+          - krb5-workstation
+          - samba-common-tools
+        state: present
+
+    - name: Discover the domain
+      ansible.builtin.command:
+        cmd: realm discover {{ domain_name }}
+      register: realm_discover
+      ignore_errors: yes
+
+    - name: Join the server to the AD domain
+      ansible.builtin.command:
+        cmd: realm join --user={{ domain_admin_user }} {{ domain_name }} --computer-ou={{ ad_ou }}
+        stdin: "{{ domain_admin_password }}"
+      when: realm_discover.rc == 0
+
+    - name: Ensure SSSD service is enabled and started
+      ansible.builtin.systemd:
+        name: sssd
+        enabled: yes
+        state: started
+
+    - name: Configure SSSD to use AD
+      ansible.builtin.lineinfile:
+        path: /etc/sssd/sssd.conf
+        regexp: '^domains'
+        line: 'domains = {{ domain_name }}'
+        state: present
+
+    - name: Restart SSSD service
+      ansible.builtin.systemd:
+        name: sssd
+        state: restarted
