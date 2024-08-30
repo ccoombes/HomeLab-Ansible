@@ -37,6 +37,40 @@
         cmd: echo {{ domain_admin_password }} | realm join --user={{ domain_admin_user }} {{ domain_name }}
       when: realm_discover.rc == 0
 
+    - name: Create /etc/sssd directory if it does not exist
+      ansible.builtin.file:
+        path: /etc/sssd
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create /etc/sssd/sssd.conf if it does not exist
+      ansible.builtin.copy:
+        dest: /etc/sssd/sssd.conf
+        content: |
+          [sssd]
+          domains = {{ domain_name }}
+          config_file_version = 2
+          services = nss, pam
+
+          [domain/{{ domain_name }}]
+          id_provider = ad
+          auth_provider = ad
+          access_provider = ad
+          chpass_provider = ad
+          cache_credentials = True
+          ad_domain = {{ domain_name }}
+          krb5_realm = {{ domain_name | upper }}
+          realmd_tags = manages-system joined-with-samba
+          default_shell = /bin/bash
+          fallback_homedir = /home/%u@%d
+          access_provider = simple
+        owner: root
+        group: root
+        mode: '0600'
+      when: realm_discover.rc == 0
+
     - name: Ensure SSSD service is enabled and started
       ansible.builtin.systemd:
         name: sssd
