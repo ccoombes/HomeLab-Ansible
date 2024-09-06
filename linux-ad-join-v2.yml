@@ -1,5 +1,5 @@
 - name: SSSD Integration Playbook
-  hosts: linux
+  hosts: all
   become: true
   vars_prompt:
     - name: "bind_password"
