@@ -5,15 +5,16 @@
 
   tasks:
     - name: Install required packages
-      package:
-        name: "{{ item }}"
+      ansible.builtin.yum:
+        name:
+          - realmd
+          - sssd
+          - krb5-workstation
+          - samba-common-tools
+          - oddjob
+          - oddjob-mkhomedir
+          - adcli
         state: present
-        with_items:
-        - realmd
-        - sssd
-        - oddjob
-        - oddjob-mkhomedir
-        - samba-common-tools
 
     - name: Join the Active Directory domain
       command: "realm join --user=admin@domain.com domain.com --install=/ --verbose"
