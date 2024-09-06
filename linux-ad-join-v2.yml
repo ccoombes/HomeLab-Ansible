@@ -1,0 +1,25 @@
+---
+- name: "Add Rocky Linux server to Active Directory domain"
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install required packages
+      package:
+        name: "{{ item }}"
+        state: present
+        with_items:
+        - realmd
+        - sssd
+        - oddjob
+        - oddjob-mkhomedir
+        - samba-common-tools
+
+    - name: Join the Active Directory domain
+      command: "realm join --user=admin@domain.com domain.com --install=/ --verbose"
+      become_user: root
+
+    - name: Restart SSSD service
+      service:
+        name: sssd
+        state: restarted

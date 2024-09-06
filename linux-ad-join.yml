@@ -5,7 +5,7 @@
     domain_name: "internal.georgieandchris.com"
     domain_admin_user: "ccadmin"
     domain_admin_password: "P@ssw0rd"
-    #ad_ou: "OU=Georgie and Chris Computers,DC=internal,DC=georgieandchris,DC=com" # Optional, specify the OU if needed
+    #ad_ou: "OU=Georgie and Chris Computers,DC=internal,DC=georgieandchris,DC=com" # Optional, specify the OU
 
   tasks:
     - name: Install required packages
