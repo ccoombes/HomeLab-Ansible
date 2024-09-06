@@ -17,7 +17,7 @@
         state: present
 
     - name: Join the Active Directory domain
-      command: "realm join --user=admin@domain.com domain.com --install=/ --verbose"
+      command: "realm join --user=ccadmin@internal.georgieandchris.com internal.georgieandchris.com --install=/ --verbose"
       become_user: root
 
     - name: Restart SSSD service
