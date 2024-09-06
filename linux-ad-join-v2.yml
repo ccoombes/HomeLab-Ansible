@@ -1,26 +1,90 @@
----
-- name: "Add Rocky Linux server to Active Directory domain"
-  hosts: all
+- name: SSSD Integration Playbook
+  hosts: linux
   become: true
-
+  vars_prompt:
+    - name: "bind_password"
+      prompt: "Password for the AD user"
+      private: yes
   tasks:
     - name: Install required packages
-      ansible.builtin.yum:
-        name:
-          - realmd
-          - sssd
-          - krb5-workstation
-          - samba-common-tools
-          - oddjob
-          - oddjob-mkhomedir
-          - adcli
+      yum:
+        name: "{{ item }}"
         state: present
+      loop:
+        - sssd
+        - realmd
+        - oddjob
+        - oddjob-mkhomedir
+        - adcli
+        - samba-common
+        - samba-common-tools
+        - krb5-workstation
+        - openldap-clients
+      register: package_installation
 
-    - name: Join the Active Directory domain
-      command: "realm join --user=ccadmin@internal.georgieandchris.com internal.georgieandchris.com --install=/ --verbose"
-      become_user: root
+    - name: Display status of package installation
+      debug:
+        msg: "{{ item.item }} is successfully installed"
+      loop: "{{ package_installation.results }}"
+      when: item.changed
+      loop_control:
+        label: "{{ item.item }}"
 
-    - name: Restart SSSD service
-      service:
-        name: sssd
-        state: restarted
+    - name: Join system
+      command: /bin/bash -c "echo {{ bind_password }} | realm join --user=ccadmin internal.georgieandchris.com"
+      register: join_output
+      no_log: True
+      ignore_errors: yes
+
+    - name: Display success message
+      debug:
+        msg: "Join successful!"
+      when: join_output.rc == 0
+
+    - name: Display error message
+      debug:
+        msg: "Join failed or already joined"
+      when: join_output.rc != 0
+
+    - name: Edit SSSD configuration file
+      block:
+        - name: Modify access_provider line
+          lineinfile:
+            path: /etc/sssd/sssd.conf
+            regexp: '^access_provider'
+            line: 'access_provider = simple'
+            state: present
+
+        - name: Add simple_allow_groups line
+          lineinfile:
+            path: /etc/sssd/sssd.conf
+            regexp: '^simple_allow_groups'
+            line: 'simple_allow_groups = Domain Admins'
+            state: present
+
+        - name: Add use_fully_qualified_names line
+          lineinfile:
+            path: /etc/sssd/sssd.conf
+            regexp: '^use_fully_qualified_names'
+            line: 'use_fully_qualified_names = False'
+            state: present
+
+        - name: Add ad_gpo_access_control line to SSSD config
+          lineinfile:
+            path: /etc/sssd/sssd.conf
+            regexp: '^ad_gpo_access_control'
+            line: 'ad_gpo_access_control = permissive'
+            state: present
+
+        - name: Add %Linux line to sudoers file
+          lineinfile:
+            path: /etc/sudoers
+            line: "%Linux ALL=(ALL) ALL"
+            validate: "visudo -cf %s"
+
+    - name: Restart the SSSD Service
+      block:
+        - name: Restart SSSD service
+          service:
+            name: sssd
+            state: restarted
